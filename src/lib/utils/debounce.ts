@@ -5,7 +5,7 @@ export const debouncer = (fn: (...rest: any[]) => void, timer?: number) => {
     function out (...rest: any[]) {
         clearTimeout(handle);
         handle = setTimeout(() => {
-            fn.apply(self, rest);
+            fn.apply(this, rest);
         }, timer);
     };
     return out;
