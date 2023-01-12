@@ -12,6 +12,7 @@
 	import { onMount } from "svelte";
 	import * as d3 from "d3";
 	import { pairs } from "./utils/transformations";
+    import { Quad } from "./validators/quads"
 
 
 
@@ -21,8 +22,21 @@
     let dots2: any
     let dots3: any
     let dotActive: any
-    export let coastline: any = []
+    
+    let coastline: any = []
     let lines: any = []
+
+    let validatorCoordinates: any = []
+    let quads: Quad = new Quad(180, -180, -180, 180)
+    $: {
+        const [scX, scY] = get_scales()
+        const [width, height] = canvas_size()
+        const [top, left] = [0, 0]
+        const [bottom, right] = [height, width]
+        quads = new Quad(top, right, bottom, left, validatorCoordinates.map(projection).map((k: any) => [scX(k[0]), scY(k[1])]))
+        quads.distribute(9)
+        rerender()
+    }
     $: {
         lines = coastline
             .map(map_coastlines)
@@ -33,6 +47,7 @@
 
     onMount(async () => {
         coastline = await load(`/coastline.json`)
+        validatorCoordinates = await load(`/validator-coordinates.json`)
         render()
     })
 
@@ -56,23 +71,23 @@
         if (!lines.length) {
             return
         }
-        const [csX, csY] = get_scales()
+        const [scX, scY] = get_scales()
         lines.forEach((line: any) => {
             const g = worldMap.append('g')
                 .selectAll('line')
                 .data(pairs(line))
                 .enter()
                 .append('line')
-                .attr('x1', (d: any) => csX(d[0][0]))
-                .attr('y1', (d: any) => csY(d[0][1]))
-                .attr('x2', (d: any) => csX(d[1][0]))
-                .attr('y2', (d: any) => csY(d[1][1]))
+                .attr('x1', (d: any) => scX(d[0][0]))
+                .attr('y1', (d: any) => scY(d[0][1]))
+                .attr('x2', (d: any) => scX(d[1][0]))
+                .attr('y2', (d: any) => scY(d[1][1]))
                 .attr('stroke', 'black')
                 .attr('stroke-width', 1)
         })
     }
     const render_dots1 = () => {
-
+        quads.draw_dot(d3_select(dots1))
     }
 
     const projection = d3.geoMercator()
@@ -81,11 +96,18 @@
         .filter((k: any, i: number) => !(i % 13))
         .map(projection)
 
-        const get_scales = () => {
-        const [width, height] = [div.style('width'), div.style('height')].map(rm_px)
-        const csX = d3.scaleLinear().domain([0, 1000]).range([0, width])
-        const csY = d3.scaleLinear().domain([-90, 440]).range([0, height])
-        return [csX, csY]
+    const get_scales = () => {
+        const [width, height] = canvas_size()
+        const scX = d3.scaleLinear().domain([0, 1000]).range([0, width])
+        const scY = d3.scaleLinear().domain([-90, 440]).range([0, height])
+        return [scX, scY]
+    }
+    const canvas_size = () => {
+        if (!div) {
+            return [0, 0]
+        }
+        div = d3_select(div)
+        return [div.style('width'), div.style('height')].map(rm_px)
     }
 
 </script>
