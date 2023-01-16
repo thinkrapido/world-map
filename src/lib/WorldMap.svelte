@@ -23,6 +23,7 @@
     let dots3: any
     let dotActive: any
     
+    let worldMapBg: any
     let coastline: any = []
     let lines: any = []
 
@@ -34,7 +35,7 @@
         const [top, left] = [0, 0]
         const [bottom, right] = [height, width]
         quads = new Quad(top, right, bottom, left, validatorCoordinates.map(projection).map((k: any) => [scX(k[0]), scY(k[1])]))
-        quads.distribute(5)
+        quads.distribute(4)
         rerender()
     }
     $: {
@@ -46,6 +47,7 @@
 
 
     onMount(async () => {
+        worldMapBg = await getWorldMap()
         coastline = await load(`/coastline.json`)
         validatorCoordinates = await load(`/validator-coordinates.json`)
         render()
@@ -58,7 +60,8 @@
         dots3 = d3_select(dots3)
         dotActive = d3_select(dotActive)
         worldMap = d3_select(worldMap)
-        render_coastlines()
+        render_worldMap()
+        //render_coastlines()
         render_dots1()
     }
 
@@ -86,6 +89,17 @@
                 .attr('stroke-width', 1)
         })
     }
+    const render_worldMap = () => {
+        if (!lines.length) {
+            return
+        }
+        const scale = .43
+        let svg = worldMapBg.node().innerHTML
+        svg = svg.replace(/ xmlns="http:\/\/www.w3.org\/2000\/svg"/g, '')
+        svg = `<g transform="translate(0,-20),scale(${scale * 1.045},${scale})">${svg}</g>`
+        console.log(svg)
+        worldMap.html(svg)
+    }
     const render_dots1 = () => {
         quads.draw_dot(d3_select(dots1))
     }
@@ -93,7 +107,7 @@
     const projection = d3.geoMercator()
 
     const map_coastlines = (k: any[]) => k
-        .filter((k: any, i: number) => !(i % 13))
+        .filter((k: any, i: number) => !(i % 7))
         .map(projection)
 
     const get_scales = () => {
@@ -108,6 +122,9 @@
         }
         div = d3_select(div)
         return [div.style('width'), div.style('height')].map(rm_px)
+    }
+    const getWorldMap = async () => {
+        return d3_select(await d3.svg('/world-map.svg')).select('#Layer_1-2')
     }
 
 </script>
