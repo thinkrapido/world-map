@@ -97,7 +97,6 @@
         let svg = worldMapBg.node().innerHTML
         svg = svg.replace(/ xmlns="http:\/\/www.w3.org\/2000\/svg"/g, '')
         svg = `<g transform="translate(0,-20),scale(${scale * 1.045},${scale})">${svg}</g>`
-        console.log(svg)
         worldMap.html(svg)
     }
     const render_dots1 = () => {

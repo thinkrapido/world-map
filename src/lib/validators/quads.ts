@@ -1,4 +1,5 @@
 
+import { rm_px } from "$lib/utils/d3"
 import { zip } from "../utils/transformations"
 
 enum Quadrant {
@@ -151,11 +152,12 @@ export class Quad {
                     .attr('r', size)
                     .attr('fill', '#4F50CC')
                     .attr('stroke', '#E0E7FF')
-                sel.append('text')
+                const t = sel.append('text')
                     .attr('x', cx)
                     .attr('y', cy)
                     .text(count)
                     .style('fill', '#E0E7FF')
+                fix_positioning_of_text(t)
             }
             else {
                 this.coordinates.forEach((position) => {
@@ -179,6 +181,12 @@ export class Quad {
     }
 }
 
+const fix_positioning_of_text = (sel: any) => {
+    const {width, height, ..._} = sel.node().getBoundingClientRect()
+    const position = [sel.attr('x'), sel.attr('y')].map(rm_px)
+    sel.attr('x', position[0] - width / 2)
+    sel.attr('y', position[1] + height / 3)
+}
 
 
 
