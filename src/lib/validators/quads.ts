@@ -21,10 +21,10 @@ export class Quad {
     ) {}
 
     mid_horizontal(): number {
-        return (this.right - this.left) / 2
+        return (this.right + this.left) / 2
     }
     mid_vertical(): number {
-        return (this.bottom - this.top) / 2
+        return (this.bottom + this.top) / 2
     }
     new_A_quad(): Quad {
         return new Quad(
@@ -66,12 +66,12 @@ export class Quad {
                 return Quadrant.A
             }
             else {
-                return Quadrant.B
+                return Quadrant.C
             }
         }
         else {
             if (latitude < this.mid_vertical()) {
-                return Quadrant.C
+                return Quadrant.B
             }
             else {
                 return Quadrant.D
@@ -120,29 +120,55 @@ export class Quad {
     }
 
     draw_dot(sel: any) {
-        if (this.coordinates.length) {
-            // draw dot
-console.log(this.coordinates.length)
-                        // mean
-                        const log = Math.log10(this.coordinates.length)
-                        const [cx, cy] = this.coordinates.reduce(
-                            (acc, v) => zip(acc, v).map(d => d[0] + d[1]),
-                            [0, 0]
-                        ).map(d => d / this.coordinates.length)
-                        sel.append('circle')
-                            .attr('cx', cx)
-                            .attr('cy', cy)
-                            .attr('r', 3 + log * 3)
-                            .attr('fill', 'red')
-            
-            this.coordinates.forEach((position) => {
-                const [cx, cy] = position
+        const count = this.coordinates.length
+        if (count) {
+                // draw dot
+
+            let size = 7
+            let fontSize = 7
+            if (count <= 50) {
+                size = 6
+            }
+            if (count > 50) {
+                size = 10
+                fontSize = 9
+            }
+            if (count > 100) {
+                size = 15
+                fontSize = 12
+            }
+    
+            // mean
+            const [cx, cy] = this.coordinates.reduce(
+                (acc, v) => zip(acc, v).map(d => d[0] + d[1]),
+                [0, 0]
+            ).map(d => d / count)
+
+            if (count > 30) {
                 sel.append('circle')
                     .attr('cx', cx)
                     .attr('cy', cy)
-                    .attr('r', 3)
-                    .attr('fill', 'blue')
+                    .attr('r', size)
+                    .attr('fill', '#4F50CC')
+                    .attr('stroke', '#E0E7FF')
+                sel.append('text')
+                    .attr('x', cx)
+                    .attr('y', cy)
+                    .text(count)
+                    .style('fill', '#E0E7FF')
+            }
+            else {
+                this.coordinates.forEach((position) => {
+                    const [cx, cy] = position
+                    sel.append('circle')
+                        .attr('cx', cx)
+                        .attr('cy', cy)
+                        .attr('r', 3)
+                        .attr('fill', '#4F50CC')
+                        .attr('stroke', '#E0E7FF')
                 })
+            }
+            
         }
         else {
             if (this.a) { this.a.draw_dot(sel) }

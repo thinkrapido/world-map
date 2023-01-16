@@ -34,7 +34,7 @@
         const [top, left] = [0, 0]
         const [bottom, right] = [height, width]
         quads = new Quad(top, right, bottom, left, validatorCoordinates.map(projection).map((k: any) => [scX(k[0]), scY(k[1])]))
-        quads.distribute(9)
+        quads.distribute(5)
         rerender()
     }
     $: {
