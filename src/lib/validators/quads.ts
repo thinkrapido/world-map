@@ -120,23 +120,20 @@ export class Quad {
         if (this.d) { this.d.distribute(level) }
     }
 
-    draw_dot(sel: any) {
+    draw_dot(sel: any, level: number) {
         const count = this.coordinates.length
         if (count) {
                 // draw dot
 
-            let size = 7
-            let fontSize = 7
-            if (count <= 50) {
-                size = 6
-            }
-            if (count > 50) {
+            let size = 15
+            let fontSize = 15
+            if (count < Math.floor(100 / level)) {
                 size = 10
-                fontSize = 9
-            }
-            if (count > 100) {
-                size = 15
                 fontSize = 12
+            }
+            if (count < Math.floor(50 / level)) {
+                let size = 7
+                let fontSize = 10
             }
     
             // mean
@@ -145,7 +142,7 @@ export class Quad {
                 [0, 0]
             ).map(d => d / count)
 
-            if (count > 30) {
+//            if (count > Math.floor(30 / level)) {
                 sel.append('circle')
                     .attr('cx', cx)
                     .attr('cy', cy)
@@ -157,26 +154,27 @@ export class Quad {
                     .attr('y', cy)
                     .text(count)
                     .style('fill', '#E0E7FF')
+                    .style('font-size', fontSize)
                 fix_positioning_of_text(t)
-            }
-            else {
-                this.coordinates.forEach((position) => {
-                    const [cx, cy] = position
-                    sel.append('circle')
-                        .attr('cx', cx)
-                        .attr('cy', cy)
-                        .attr('r', 3)
-                        .attr('fill', '#4F50CC')
-                        .attr('stroke', '#E0E7FF')
-                })
-            }
+            // }
+            // else {
+            //     this.coordinates.forEach((position) => {
+            //         const [cx, cy] = position
+            //         sel.append('circle')
+            //             .attr('cx', cx)
+            //             .attr('cy', cy)
+            //             .attr('r', 3)
+            //             .attr('fill', '#4F50CC')
+            //             .attr('stroke', '#E0E7FF')
+            //     })
+            // }
             
         }
         else {
-            if (this.a) { this.a.draw_dot(sel) }
-            if (this.b) { this.b.draw_dot(sel) }
-            if (this.c) { this.c.draw_dot(sel) }
-            if (this.d) { this.d.draw_dot(sel) }
+            if (this.a) { this.a.draw_dot(sel, level) }
+            if (this.b) { this.b.draw_dot(sel, level) }
+            if (this.c) { this.c.draw_dot(sel, level) }
+            if (this.d) { this.d.draw_dot(sel, level) }
         }
     }
 }

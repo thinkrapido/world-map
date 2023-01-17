@@ -13,6 +13,7 @@
 	import * as d3 from "d3";
 	import { pairs } from "./utils/transformations";
     import { Quad } from "./validators/quads"
+	import { Zoom } from "./zoom";
 
 
 
@@ -26,18 +27,10 @@
     let worldMapBg: any
     let coastline: any = []
     let lines: any = []
+    let zoom: any
 
     let validatorCoordinates: any = []
     let quads: Quad = new Quad(180, -180, -180, 180)
-    $: {
-        const [scX, scY] = get_scales()
-        const [width, height] = canvas_size()
-        const [top, left] = [0, 0]
-        const [bottom, right] = [height, width]
-        quads = new Quad(top, right, bottom, left, validatorCoordinates.map(projection).map((k: any) => [scX(k[0]), scY(k[1])]))
-        quads.distribute(4)
-        rerender()
-    }
     $: {
         lines = coastline
             .map(map_coastlines)
@@ -55,13 +48,13 @@
 
     const render = () => {
         div = d3_select(div)
+        worldMap = d3_select(worldMap)
         dots1 = d3_select(dots1)
         dots2 = d3_select(dots2)
         dots3 = d3_select(dots3)
         dotActive = d3_select(dotActive)
-        worldMap = d3_select(worldMap)
         render_worldMap()
-        //render_coastlines()
+        render_coastlines()
         render_dots1()
     }
 
@@ -100,7 +93,9 @@
         worldMap.html(svg)
     }
     const render_dots1 = () => {
-        quads.draw_dot(d3_select(dots1))
+        if (zoom) {
+            quads.draw_dot(d3_select(dots1), zoom.level)
+        }
     }
 
     const projection = d3.geoMercator()
@@ -111,9 +106,26 @@
 
     const get_scales = () => {
         const [width, height] = canvas_size()
+        if (width == 0 && height == 0) {
+            return [(d: number):number => 0, (d: number):number => 0]
+        }
+        if (!zoom) {
+            zoom = new Zoom([width, height], 3)
+        }
+        const zoomX = d3.scaleLinear().domain([zoom.left, zoom.right]).range([0, width])
+        const zoomY = d3.scaleLinear().domain([zoom.top, zoom.bottom]).range([0, height])
         const scX = d3.scaleLinear().domain([0, 1000]).range([0, width])
         const scY = d3.scaleLinear().domain([-90, 440]).range([0, height])
-        return [scX, scY]
+        const out = [(d: number):number => zoomX(scX(d)), (d: number):number => zoomY(scY(d))]
+        if (zoom) {
+            const [scX, scY] = out
+            const [width, height] = canvas_size()
+            const [top, left] = [0, 0]
+            const [bottom, right] = [height, width]
+            quads = new Quad(top, right, bottom, left, validatorCoordinates.map(projection).map((k: any) => [scX(k[0]), scY(k[1])]))
+            quads.distribute(zoom.level + 3 || 4)
+        }
+        return out
     }
     const canvas_size = () => {
         if (!div) {
@@ -125,6 +137,7 @@
     const getWorldMap = async () => {
         return d3_select(await d3.svg('/world-map.svg')).select('#Layer_1-2')
     }
+
 
 </script>
 
