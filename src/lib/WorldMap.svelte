@@ -9,6 +9,7 @@
 
     import { debouncer } from "./utils/debounce";
     import { d3_select, rm_px } from "./utils/d3"
+    import { clamp } from "./utils/math"
 	import { onMount } from "svelte";
 	import * as d3 from "d3";
 	import { pairs } from "./utils/transformations";
@@ -29,7 +30,15 @@
     let lines: any = []
     let zoom: any
 
-    const ZOOM_FACTOR = 1
+    const ZOOM_FACTOR_MAX = 9
+    const ZOOM_FACTOR_MIN = 1
+    let ZOOM_FACTOR = ZOOM_FACTOR_MIN
+    $: {
+        ZOOM_FACTOR = Math.floor(clamp(ZOOM_FACTOR, ZOOM_FACTOR_MIN, ZOOM_FACTOR_MAX))
+        const [width, height] = canvas_size()
+        zoom = new Zoom([width, height], ZOOM_FACTOR)
+        rerender()
+    }
 
     let validatorCoordinates: any = []
     let quads: Quad = new Quad(180, -180, -180, 180)
@@ -62,6 +71,7 @@
 
     const rerender = debouncer(() => {
         d3_select(worldMap).selectChildren().remove()
+        d3_select(dots1).selectChildren().remove()
         render()
     }, 1)
 
@@ -95,9 +105,14 @@
         worldMap.html(svg)
     }
     const render_dots1 = () => {
-        if (zoom) {
-            quads.draw_dot(d3_select(dots1), zoom.level)
-        }
+            const [scX, scY] = get_scales()
+            const [width, height] = canvas_size()
+            const [top, left] = [0, 0]
+            const [bottom, right] = [height, width]
+            quads = new Quad(top, right, bottom, left, validatorCoordinates.map(projection).map((k: any) => [scX(k[0]), scY(k[1])]))
+            const level = zoom.level + 3 || 4
+            quads.distribute(level)
+            quads.draw_dot(d3_select(dots1), level)
     }
 
     const projection = d3.geoMercator()
@@ -111,39 +126,48 @@
         if (width == 0 && height == 0) {
             return [(d: number):number => 0, (d: number):number => 0]
         }
-        if (!zoom) {
-            zoom = new Zoom([width, height], ZOOM_FACTOR)
-        }
         const zoomX = d3.scaleLinear().domain([zoom.left, zoom.right]).range([0, width])
         const zoomY = d3.scaleLinear().domain([zoom.top, zoom.bottom]).range([0, height])
         const scX = d3.scaleLinear().domain([0, 1000]).range([0, width])
         const scY = d3.scaleLinear().domain([-90, 440]).range([0, height])
         const out = [(d: number):number => zoomX(scX(d)), (d: number):number => zoomY(scY(d))]
-        if (zoom) {
-            const [scX, scY] = out
-            const [width, height] = canvas_size()
-            const [top, left] = [0, 0]
-            const [bottom, right] = [height, width]
-            quads = new Quad(top, right, bottom, left, validatorCoordinates.map(projection).map((k: any) => [scX(k[0]), scY(k[1])]))
-            quads.distribute(zoom.level + 3 || 4)
-        }
         return out
     }
     const canvas_size = () => {
-        if (!div) {
-            return [0, 0]
+        let out: number[]
+        try {
+            div = d3_select(div)
+            out = [div.style('width'), div.style('height')].map(rm_px)
         }
-        div = d3_select(div)
-        return [div.style('width'), div.style('height')].map(rm_px)
+        catch(e) {
+            out = [0, 0]
+        }
+        return out
     }
     const getWorldMap = async () => {
         return d3_select(await d3.svg('/world-map.svg')).select('#Layer_1-2')
     }
 
 
+    const mapResize = (node: HTMLElement, parameters?: any) => {
+        
+        const wheel = (event: WheelEvent) => {
+            event.preventDefault()
+            ZOOM_FACTOR += event.deltaY / 120;
+        }
+
+        node.addEventListener('wheel', wheel)
+
+        return {
+            destroy() {
+                node.removeEventListener('wheel', wheel)
+            }
+        }
+    }
+
 </script>
 
-<div bind:this={div}>
+<div bind:this={div} use:mapResize>
     <svg>
         <g bind:this={worldMap}/>
         <g bind:this={dots1}/>

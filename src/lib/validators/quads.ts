@@ -1,5 +1,5 @@
 
-import { rm_px } from "$lib/utils/d3"
+import { rm_px, get_rect } from "$lib/utils/d3"
 import { zip } from "../utils/transformations"
 
 enum Quadrant {
@@ -142,33 +142,19 @@ export class Quad {
                 [0, 0]
             ).map(d => d / count)
 
-//            if (count > Math.floor(30 / level)) {
-                sel.append('circle')
-                    .attr('cx', cx)
-                    .attr('cy', cy)
-                    .attr('r', size)
-                    .attr('fill', '#4F50CC')
-                    .attr('stroke', '#E0E7FF')
-                const t = sel.append('text')
-                    .attr('x', cx)
-                    .attr('y', cy)
-                    .text(count)
-                    .style('fill', '#E0E7FF')
-                    .style('font-size', fontSize)
-                fix_positioning_of_text(t)
-            // }
-            // else {
-            //     this.coordinates.forEach((position) => {
-            //         const [cx, cy] = position
-            //         sel.append('circle')
-            //             .attr('cx', cx)
-            //             .attr('cy', cy)
-            //             .attr('r', 3)
-            //             .attr('fill', '#4F50CC')
-            //             .attr('stroke', '#E0E7FF')
-            //     })
-            // }
-            
+            sel.append('circle')
+                .attr('cx', cx)
+                .attr('cy', cy)
+                .attr('r', size)
+                .attr('fill', '#4F50CC')
+                .attr('stroke', '#E0E7FF')
+            const t = sel.append('text')
+                .attr('x', cx)
+                .attr('y', cy)
+                .text(count)
+                .style('fill', '#E0E7FF')
+                .style('font-size', fontSize)
+            fix_positioning_of_text(t)
         }
         else {
             if (this.a) { this.a.draw_dot(sel, level) }
@@ -180,7 +166,7 @@ export class Quad {
 }
 
 const fix_positioning_of_text = (sel: any) => {
-    const {width, height, ..._} = sel.node().getBoundingClientRect()
+    const {width, height, ..._} = get_rect(sel.node())
     const position = [sel.attr('x'), sel.attr('y')].map(rm_px)
     sel.attr('x', position[0] - width / 2)
     sel.attr('y', position[1] + height / 3)
