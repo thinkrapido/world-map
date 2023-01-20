@@ -10,6 +10,7 @@
     import { debouncer } from "./utils/debounce";
     import { d3_select, get_rect, canvas_size } from "./utils/d3"
     import { clamp } from "./utils/math"
+    import { zip } from "./utils/transformations"
 	import { onMount } from "svelte";
 	import * as d3 from "d3";
 	import { pairs } from "./utils/transformations";
@@ -146,6 +147,7 @@
     const mapResize = (node: HTMLElement, parameters?: any) => {
         
         let position: number[] = canvas_size(div).map((d: number) => d / 2)
+        let dragging: boolean = false
 
         const wheel = (event: WheelEvent) => {
             event.preventDefault()
@@ -157,27 +159,42 @@
             event.preventDefault()
             const rect = get_rect(node)
             position = [event.clientX - rect.clientX, event.clientY - rect.clientY]
+            if (dragging) {
+                mousePosition = zip(position.map((d: number): number => -d).map((d: number): number => d / (ZOOM_FACTOR)), canvas_size(div)).map((d: number[]): number => d[0] + d[1])
+                rerender()
+            }
         }
         const mouseout = (event: MouseEvent) => {
             event.preventDefault()
             position = canvas_size(div).map((d: number) => d / 2)
         }
+        const mousedown = (event: MouseEvent) => {
+            dragging = true
+        }
+        const mouseup = (event: MouseEvent) => {
+            dragging = false
+        }
 
         node.addEventListener('wheel', wheel)
         node.addEventListener('mousemove', mousemove)
         node.addEventListener('mouseout', mouseout)
+        node.addEventListener('mousedown', mousedown)
+        node.addEventListener('mouseup', mouseup)
 
         return {
             destroy() {
                 node.removeEventListener('wheel', wheel)
                 node.removeEventListener('mousemove', mousemove)
                 node.removeEventListener('mouseout', mouseout)
+                node.removeEventListener('mousedown', mousedown)
+                node.removeEventListener('mouseup', mouseup)
             }
         }
     }
     const reset_zoom = () => {
         mousePosition = canvas_size(div).map((d: number) => d / 2)
         ZOOM_FACTOR = ZOOM_FACTOR_MIN
+        rerender()
     }
 
 </script>
