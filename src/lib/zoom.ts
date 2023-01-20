@@ -10,10 +10,10 @@ export class Zoom {
     }
     set position(v: number[]) {
         this._position = v
-        this._top       = this._position[1] - this.spread[1]
-        this._bottom    = this._position[1] + this.spread[1]
-        this._left      = this._position[0] - this.spread[0]
-        this._right     = this._position[0] + this.spread[0]
+        this._top       = (this._position[1] + this.size[1] / 2 - this.spread[1]) - this.size[1] / 2
+        this._bottom    = (this._position[1] + this.size[1] / 2 + this.spread[1]) - this.size[1] / 2
+        this._left      = (this._position[0] + this.size[0] / 2 - this.spread[0]) - this.size[0] / 2
+        this._right     = (this._position[0] + this.size[0] / 2 + this.spread[0]) - this.size[0] / 2
     }
     set level(v: number) {
         if (0 <= v || v >= 10) {
@@ -26,7 +26,7 @@ export class Zoom {
     }
 
     private get spread(): number[] {
-        return this._position.map((d: number) => d / (this._level))
+        return this.size.map((d: number) => d / (this._level + 1))
     }
 
     get top(): number {

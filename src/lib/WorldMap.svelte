@@ -8,7 +8,7 @@
 <script lang="ts">
 
     import { debouncer } from "./utils/debounce";
-    import { d3_select, rm_px } from "./utils/d3"
+    import { d3_select, get_rect, canvas_size } from "./utils/d3"
     import { clamp } from "./utils/math"
 	import { onMount } from "svelte";
 	import * as d3 from "d3";
@@ -18,6 +18,7 @@
 
 
 
+    let div_size: number[] = [0, 0]
     let div: any
     let worldMap: any
     let dots1: any
@@ -29,13 +30,14 @@
     let coastline: any = []
     let lines: any = []
     let zoom: any
+    let mousePosition: number[] = [0, 0]
 
     const ZOOM_FACTOR_MAX = 9
     const ZOOM_FACTOR_MIN = 1
     let ZOOM_FACTOR = ZOOM_FACTOR_MIN
     $: {
         ZOOM_FACTOR = Math.floor(clamp(ZOOM_FACTOR, ZOOM_FACTOR_MIN, ZOOM_FACTOR_MAX))
-        const [width, height] = canvas_size()
+        const [width, height] = div_size
         zoom = new Zoom([width, height], ZOOM_FACTOR)
         rerender()
     }
@@ -54,6 +56,8 @@
         worldMapBg = await getWorldMap()
         coastline = await load(`/coastline.json`)
         validatorCoordinates = await load(`/validator-coordinates.json`)
+        mousePosition = canvas_size(div).map((d: number) => d / 2)
+        div_size = canvas_size(div)
         render()
     })
 
@@ -106,7 +110,7 @@
     }
     const render_dots1 = () => {
             const [scX, scY] = get_scales()
-            const [width, height] = canvas_size()
+            const [width, height] = canvas_size(div)
             const [top, left] = [0, 0]
             const [bottom, right] = [height, width]
             quads = new Quad(top, right, bottom, left, validatorCoordinates.map(projection).map((k: any) => [scX(k[0]), scY(k[1])]))
@@ -122,26 +126,16 @@
         .map(projection)
 
     const get_scales = () => {
-        const [width, height] = canvas_size()
+        const [width, height] = canvas_size(div)
         if (width == 0 && height == 0) {
             return [(d: number):number => 0, (d: number):number => 0]
         }
+        zoom.position = mousePosition 
         const zoomX = d3.scaleLinear().domain([zoom.left, zoom.right]).range([0, width])
         const zoomY = d3.scaleLinear().domain([zoom.top, zoom.bottom]).range([0, height])
         const scX = d3.scaleLinear().domain([0, 1000]).range([0, width])
         const scY = d3.scaleLinear().domain([-90, 440]).range([0, height])
         const out = [(d: number):number => zoomX(scX(d)), (d: number):number => zoomY(scY(d))]
-        return out
-    }
-    const canvas_size = () => {
-        let out: number[]
-        try {
-            div = d3_select(div)
-            out = [div.style('width'), div.style('height')].map(rm_px)
-        }
-        catch(e) {
-            out = [0, 0]
-        }
         return out
     }
     const getWorldMap = async () => {
@@ -151,23 +145,44 @@
 
     const mapResize = (node: HTMLElement, parameters?: any) => {
         
+        let position: number[] = canvas_size(div).map((d: number) => d / 2)
+
         const wheel = (event: WheelEvent) => {
             event.preventDefault()
-            ZOOM_FACTOR += event.deltaY / 120;
+            ZOOM_FACTOR -= event.deltaY / 120;
+            mousePosition = position
+        }
+
+        const mousemove = (event: MouseEvent) => {
+            event.preventDefault()
+            const rect = get_rect(node)
+            position = [event.clientX - rect.clientX, event.clientY - rect.clientY]
+        }
+        const mouseout = (event: MouseEvent) => {
+            event.preventDefault()
+            position = canvas_size(div).map((d: number) => d / 2)
         }
 
         node.addEventListener('wheel', wheel)
+        node.addEventListener('mousemove', mousemove)
+        node.addEventListener('mouseout', mouseout)
 
         return {
             destroy() {
                 node.removeEventListener('wheel', wheel)
+                node.removeEventListener('mousemove', mousemove)
+                node.removeEventListener('mouseout', mouseout)
             }
         }
+    }
+    const reset_zoom = () => {
+        mousePosition = canvas_size(div).map((d: number) => d / 2)
+        ZOOM_FACTOR = ZOOM_FACTOR_MIN
     }
 
 </script>
 
-<div bind:this={div} use:mapResize>
+<div bind:this={div} use:mapResize on:mouseleave={reset_zoom}>
     <svg>
         <g bind:this={worldMap}/>
         <g bind:this={dots1}/>

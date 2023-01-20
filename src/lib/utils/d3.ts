@@ -7,6 +7,17 @@ export const d3_select = (sel: any): any => {
     }
     return sel
 }
+export const canvas_size = (div: any) => {
+    let out: number[]
+    try {
+        div = d3_select(div)
+        out = [div.style('width'), div.style('height')].map(rm_px)
+    }
+    catch(e) {
+        out = [0, 0]
+    }
+    return out
+}
 
 export const rm_px = (value: string): number => {
     return +(value.replace('px', ''))
