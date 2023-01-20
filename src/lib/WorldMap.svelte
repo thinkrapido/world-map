@@ -29,6 +29,8 @@
     let lines: any = []
     let zoom: any
 
+    const ZOOM_FACTOR = 1
+
     let validatorCoordinates: any = []
     let quads: Quad = new Quad(180, -180, -180, 180)
     $: {
@@ -110,7 +112,7 @@
             return [(d: number):number => 0, (d: number):number => 0]
         }
         if (!zoom) {
-            zoom = new Zoom([width, height], 3)
+            zoom = new Zoom([width, height], ZOOM_FACTOR)
         }
         const zoomX = d3.scaleLinear().domain([zoom.left, zoom.right]).range([0, width])
         const zoomY = d3.scaleLinear().domain([zoom.top, zoom.bottom]).range([0, height])
