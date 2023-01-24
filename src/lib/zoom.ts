@@ -9,7 +9,7 @@ export class Zoom {
         this.position = size.map((d: number) => d / 2)
     }
     set position(v: number[]) {
-        this._position = v
+        this._position  = v
         this._top       = (this._position[1] + this.size[1] / 2 - this.spread[1]) - this.size[1] / 2
         this._bottom    = (this._position[1] + this.size[1] / 2 + this.spread[1]) - this.size[1] / 2
         this._left      = (this._position[0] + this.size[0] / 2 - this.spread[0]) - this.size[0] / 2

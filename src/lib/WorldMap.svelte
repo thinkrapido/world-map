@@ -134,10 +134,13 @@
         zoom.position = mousePosition 
         const zoomX = d3.scaleLinear().domain([zoom.left, zoom.right]).range([0, width])
         const zoomY = d3.scaleLinear().domain([zoom.top, zoom.bottom]).range([0, height])
-        const scX = d3.scaleLinear().domain([0, 1000]).range([0, width])
-        const scY = d3.scaleLinear().domain([-90, 440]).range([0, height])
-        const out = [(d: number):number => zoomX(scX(d)), (d: number):number => zoomY(scY(d))]
-        return out
+        const scX   = d3.scaleLinear().domain([0, 1000]).range([0, width])
+        const scY   = d3.scaleLinear().domain([-90, 440]).range([0, height])
+        const zX    = (d: number):number => zoomX(scX(d))
+        zX.invert   = (d: number):number => scX.invert(zoomX.invert(d))
+        const zY    = (d: number):number => zoomY(scY(d))
+        zY.invert   = (d: number):number => scY.invert(zoomY.invert(d))
+        return [zX, zY]
     }
     const getWorldMap = async () => {
         return d3_select(await d3.svg('/world-map.svg')).select('#Layer_1-2')
@@ -160,7 +163,14 @@
             const rect = get_rect(node)
             position = [event.clientX - rect.clientX, event.clientY - rect.clientY]
             if (dragging) {
-                mousePosition = zip(position.map((d: number): number => -d).map((d: number): number => d / (ZOOM_FACTOR)), canvas_size(div)).map((d: number[]): number => d[0] + d[1])
+                mousePosition = 
+                    zip(
+                        position
+                            .map((d: number): number => -d)
+                        ,
+                        canvas_size(div)
+                    )
+                        .map((d: number[]): number => d[0] + d[1])
                 rerender()
             }
         }
